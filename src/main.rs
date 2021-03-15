@@ -11,6 +11,7 @@ use std::env;
 use std::error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::time::Instant;
 
 pub mod models;
 pub mod schema;
@@ -33,6 +34,7 @@ pub fn establish_connection() -> PgConnection {
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
+    let start = Instant::now();
     let path = "./guwen/guwen0-1000.json";
     let connection = establish_connection();
     let input = File::open(path)?;
@@ -46,6 +48,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             .get_result::<ResPoems>(&connection)
             .expect("Error saving new post");
     }
+    // let duration = start.elapsed();
 
+    println!("Time elapsed : {:?}", start.elapsed());
     Ok(())
 }
