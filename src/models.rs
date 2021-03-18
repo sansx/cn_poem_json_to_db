@@ -7,7 +7,6 @@ use serde_json::{Map, Value};
 
 #[derive(Debug, Queryable, Serialize, Deserialize)]
 pub struct Poems {
-    // pub id: i32,
     pub _id: Map<String, Value>,
     pub title: String,
     pub dynasty: Option<String>,
@@ -17,13 +16,12 @@ pub struct Poems {
     pub remark: Option<String>,
     pub translation: Option<String>,
     pub shangxi: Option<String>,
-    // pub poemtype: Vec<String>,
 }
 
 #[derive(Debug, Queryable, Serialize, Deserialize)]
 pub struct ResPoems {
     pub id: i32,
-    pub _id:  Option<String>,
+    pub _id: Option<String>,
     pub title: String,
     pub dynasty: Option<String>,
     pub writer: Option<String>,
@@ -32,7 +30,6 @@ pub struct ResPoems {
     pub remark: Option<String>,
     pub translation: Option<String>,
     pub shangxi: Option<String>,
-    // pub poemtype: Vec<String>,
 }
 
 impl From<Poems> for NewPoem {
@@ -78,4 +75,63 @@ pub struct NewPoem {
     pub remark: Option<String>,
     pub translation: Option<String>,
     pub shangxi: Option<String>,
+}
+
+#[derive(Debug, Queryable, Serialize, Deserialize)]
+pub struct Author {
+    pub id: i32,
+    pub name: Option<String>,
+    pub headimageurl: Option<String>,
+    pub simpleintro: Option<String>,
+    pub detailintro: Option<Value>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Queryable, Serialize, Deserialize)]
+pub struct ResAuthor {
+    pub name: Option<String>,
+    pub headImageUrl: Option<String>,
+    pub simpleIntro: Option<String>,
+    pub detailIntro: Option<Value>,
+}
+
+#[derive(Debug, Insertable, AsChangeset, Deserialize)]
+#[table_name = "authors"]
+pub struct NewAuthor {
+    pub name: Option<String>,
+    pub headimageurl: Option<String>,
+    pub simpleintro: Option<String>,
+    pub detailintro: Option<Value>,
+}
+
+#[allow(non_snake_case)]
+impl From<ResAuthor> for NewAuthor {
+    fn from(author: ResAuthor) -> Self {
+        let ResAuthor {
+            name,
+            headImageUrl,
+            simpleIntro,
+            detailIntro,
+        } = author;
+        NewAuthor {
+            name,
+            headimageurl: headImageUrl,
+            simpleintro: simpleIntro,
+            detailintro: detailIntro,
+        }
+    }
+}
+
+#[derive(Debug, Queryable, Serialize, Deserialize)]
+pub struct Sentence {
+    pub id: i32,
+    pub name: Option<String>,
+    pub from: Option<String>,
+}
+
+#[derive(Debug, Insertable, AsChangeset, Deserialize)]
+#[table_name = "sentence"]
+pub struct NewSentence {
+    pub name: Option<String>,
+    pub from: Option<String>,
 }

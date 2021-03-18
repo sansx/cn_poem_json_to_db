@@ -9,6 +9,7 @@ use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error;
+use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::time::Instant;
@@ -16,7 +17,8 @@ use std::time::Instant;
 pub mod models;
 pub mod schema;
 
-use models::{NewPoem, Poems, ResPoems};
+use models::{Author, NewAuthor, NewPoem, Poems, ResAuthor, ResPoems};
+use schema::authors;
 use schema::poems;
 
 #[derive(Serialize, Deserialize)]
@@ -33,10 +35,8 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
-fn main() -> Result<(), Box<dyn error::Error>> {
-    let start = Instant::now();
-    let path = "./guwen/guwen0-1000.json";
-    let connection = establish_connection();
+pub fn save_to_poems(conn: PgConnection, path: &str) -> Result<(), Box<dyn error::Error>> {
+    // let path = "./guwen/guwen0-1000.json";
     let input = File::open(path)?;
     let buffered = BufReader::new(input);
     let lines = buffered.lines();
@@ -45,11 +45,59 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         let v: Poems = serde_json::from_str(&res.as_str().replace("type", "poemtype"))?;
         let _ = diesel::insert_into(poems::table)
             .values(&NewPoem::from(v))
-            .get_result::<ResPoems>(&connection)
+            .get_result::<ResPoems>(&conn)
             .expect("Error saving new post");
     }
-    // let duration = start.elapsed();
+    Ok(())
+}
 
+#[allow(non_snake_case)]
+fn save_to_author(conn: PgConnection, path: &str) -> Result<(), Box<dyn error::Error>> {
+    // let path = "./guwen/guwen0-1000.json";
+    use schema::authors::dsl::{detailintro, headimageurl, simpleintro};
+
+    let input = File::open(path)?;
+    let buffered = BufReader::new(input);
+    let mut lines = buffered.lines();
+    let res = lines
+        .map(|line| {
+            let ResAuthor {
+                name,
+                headImageUrl,
+                simpleIntro,
+                detailIntro,
+            } = serde_json::from_str(line.unwrap().as_str()).unwrap();
+            (
+                schema::authors::dsl::name.eq(name),
+                headimageurl.eq(headImageUrl),
+                simpleintro.eq(simpleIntro),
+                detailintro.eq(detailIntro),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    diesel::insert_into(authors::table)
+        .values(res)
+        .get_result::<Author>(&conn)
+        .expect("Error saving new post");
+    Ok(())
+}
+
+fn get_filen_names(dir: &str) -> Vec<String> {
+    let paths = fs::read_dir(dir).unwrap();
+    paths
+        .map(|path| path.unwrap().path().display().to_string())
+        .collect()
+}
+
+fn main() -> Result<(), Box<dyn error::Error>> {
+    let start = Instant::now();
+    let connection = establish_connection();
+    // save_to_poems(connection)?;
+    let res = get_filen_names("./guwen");
+
+    // println!("{:?}", res);
+    // save_to_author(connection, "./author/writer0-1000.json")?;
     println!("Time elapsed : {:?}", start.elapsed());
     Ok(())
 }
